@@ -1,0 +1,94 @@
+#include <Servo.h>
+#include <BlynkSimpleEsp8266.h>
+#include <ESP8266WiFi.h>
+Servo servo;
+int ledPin = 12; // choose pin for the LED
+int inputPin = 13; // choose input pin (for Infrared sensor)
+int val = 0; // variable for reading the pin status
+WidgetLCD lcd(V1);
+
+
+const char* ssid     = "asdf";
+const char* password = "qwertyuiop";
+char auth[] = "d936284f5cf8450d82d49c9192fa4281"; // Blynk authorization key
+const int echoPin = 4;                            // Connect the echo pin to D2 on nodemcu
+const int trigPin = 5;  
+
+
+long duration, distance ;                         // Duration used to calculate distance
+float percent;                                    // Percentage of Water Level in the tank
+
+
+  void setup()
+{
+   Serial.println("Start");
+   pinMode(ledPin, OUTPUT); // declare LED as output
+   pinMode(inputPin, INPUT); // declare Infrared sensor as input
+
+
+   pinMode(trigPin, OUTPUT);
+   pinMode(echoPin, INPUT);
+ 
+  lcd.clear();
+  lcd.print(0, 0, "Distance in cm");
+ 
+  Blynk.begin(auth, ssid, password);
+    while (Blynk.connect() == false) {
+     Serial.print("x");
+   }
+
+    
+    
+    
+    servo.attach(2);
+    servo.write(0);
+}
+
+void loop()
+{
+ 
+  lcd.clear(); //Use it to clear the LCD Widget
+  lcd.print(0, 0, "Distance in cm");
+
+  duration = pulseIn(echoPin, HIGH);
+
+distance = duration/58.2;
+percent = 100 - (distance/3);
+Serial.println(distance);
+Serial.println(percent);
+
+if(distance > 40  )
+{ distance =40;}
+
+lcd.print(7, 1, distance);
+Blynk.run();
+
+
+
+if(distance >5  )  
+{
+  Blynk.notify("dustbin is almost full");
+  Serial.println("dustbin is almost full");
+  }
+
+ Serial.println(distance);
+  // Initiates Blynk
+  Blynk.virtualWrite(8,distance); // Write depth of water to App
+  Blynk.virtualWrite(9,percent);  // Write the percentage of water in tank
+   Serial.println("distance");
+ //Serial.println("val");
+
+ 
+   val = digitalRead(inputPin);
+   if (val == HIGH)
+   {
+       servo.write(90);
+       delay(1000);
+ 
+   }
+   else
+   {
+     servo.write(0);
+     delay(1000);
+   }
+}
